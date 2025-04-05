@@ -5,7 +5,7 @@ on:
 
 jobs:
   delete-assets:
-    runs-on: *
+    runs-on: v*
     steps:
       - name: Get Release Assets
         env:
