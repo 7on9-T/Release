@@ -1,0 +1,30 @@
+name: Delete Auto-Generated Source Assets
+on:
+  release:
+    types: [published]
+
+jobs:
+  delete-assets:
+    runs-on: Release
+    steps:
+      - name: Get Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取 Release 信息
+          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}")
+          # 提取源码文件 ID（示例提取 .zip 和 .tar.gz）
+          ASSET_IDS=$(echo "$RESPONSE" | jq -r '.assets[] | select(.name | endswith(".zip") or endswith(".tar.gz")) | .id')
+          echo "ASSET_IDS=$ASSET_IDS" >> $GITHUB_ENV
+
+      - name: Delete Assets
+        if: env.ASSET_IDS != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for ID in $ASSET_IDS; do
+            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/assets/$ID"
+          done
+          
